@@ -12,9 +12,11 @@ func _ready() -> void:
 	map_root.name = "Harita"
 	add_child(map_root)
 
-	var MapLoaderScript = load("res://MapLoader.gd")
-	var map_loader = MapLoaderScript.new()
-	map_loader.build_map(map_root)
+	# GECICI TESHIS: harita yuklemeyi devre disi biraktik, cokme haritadan mi
+	# geliyor test ediyoruz. Bu satiri tekrar acmak icin basindaki "#" isaretini kaldir.
+	# var MapLoaderScript = load("res://MapLoader.gd")
+	# var map_loader = MapLoaderScript.new()
+	# map_loader.build_map(map_root)
 
 	# Gunes isigi
 	var sun = DirectionalLight3D.new()
