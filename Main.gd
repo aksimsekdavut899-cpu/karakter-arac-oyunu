@@ -1,22 +1,19 @@
 extends Node3D
 
 # Oyun baslarken calisan ana kurulum script'i.
-# Her sey (harita, isik, gokyuzu) kod ile kuruluyor, elle sahne
-# duzenlemesi gerekmiyor.
+# GECICI EN BASIT TEST: sadece duz renk arka plan + kirmizi bir kup.
+# Harita ve gokyuzu/ortam ayarlari suphelendigimiz icin gecici olarak kaldirildi.
 
 func _ready() -> void:
-	print("Oyun baslatiliyor...")
+	print("Oyun baslatiliyor (basit test modu)...")
 
-	# Harita objesini olustur ve icini doldur
-	var map_root = Node3D.new()
-	map_root.name = "Harita"
-	add_child(map_root)
-
-	# GECICI TESHIS: harita yuklemeyi devre disi biraktik, cokme haritadan mi
-	# geliyor test ediyoruz. Bu satiri tekrar acmak icin basindaki "#" isaretini kaldir.
-	# var MapLoaderScript = load("res://MapLoader.gd")
-	# var map_loader = MapLoaderScript.new()
-	# map_loader.build_map(map_root)
+	# Duz koyu mavi arka plan (Sky/ProceduralSkyMaterial kullanmiyoruz)
+	var world_env = WorldEnvironment.new()
+	var env = Environment.new()
+	env.background_mode = Environment.BG_COLOR
+	env.background_color = Color(0.1, 0.15, 0.35)
+	world_env.environment = env
+	add_child(world_env)
 
 	# Gunes isigi
 	var sun = DirectionalLight3D.new()
@@ -25,23 +22,24 @@ func _ready() -> void:
 	sun.light_energy = 1.2
 	add_child(sun)
 
-	# Basit gokyuzu / ortam
-	var world_env = WorldEnvironment.new()
-	var env = Environment.new()
-	env.background_mode = Environment.BG_SKY
-	var sky = Sky.new()
-	sky.sky_material = ProceduralSkyMaterial.new()
-	env.sky = sky
-	world_env.environment = env
-	add_child(world_env)
+	# Basit test objesi: kirmizi bir kup, kameranin tam onunde
+	var test_cube = MeshInstance3D.new()
+	test_cube.name = "TestKup"
+	var box = BoxMesh.new()
+	box.size = Vector3(2, 2, 2)
+	test_cube.mesh = box
+	var mat = StandardMaterial3D.new()
+	mat.albedo_color = Color(1, 0, 0)
+	test_cube.material_override = mat
+	test_cube.position = Vector3(0, 0, 0)
+	add_child(test_cube)
 
-	# Basit bir test kamerasi (haritayi yukaridan gorebilmek icin,
-	# karakter/arac sistemi bir sonraki adimda eklenecek)
+	# Basit kamera, kupe bakiyor
 	var camera = Camera3D.new()
 	camera.name = "TestKamera"
-	camera.position = Vector3(0, 80, 80)
-	camera.rotation_degrees = Vector3(-45, 0, 0)
+	camera.position = Vector3(0, 2, 6)
+	camera.look_at(Vector3(0, 0, 0), Vector3.UP)
 	camera.current = true
 	add_child(camera)
 
-	print("Kurulum tamamlandi.")
+	print("Kurulum tamamlandi (basit test modu).")
