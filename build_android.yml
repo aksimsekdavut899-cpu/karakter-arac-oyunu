@@ -1,0 +1,32 @@
+name: Android APK Derle
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  export-android:
+    name: Android Export
+    runs-on: ubuntu-latest
+    container:
+      image: barichello/godot-ci:4.3
+
+    steps:
+      - name: Depoyu indir
+        uses: actions/checkout@v4
+
+      - name: Varliklari ice aktar
+        run: |
+          godot --headless --verbose --editor --quit
+
+      - name: Android APK derle (debug)
+        run: |
+          mkdir -v -p build/android
+          godot --headless --verbose --export-debug "Android Debug" "$(pwd)/build/android/karakter-arac-oyunu-debug.apk"
+
+      - name: APK'yi yukle (Artifacts)
+        uses: actions/upload-artifact@v4
+        with:
+          name: karakter-arac-oyunu-apk
+          path: build/android/*.apk
