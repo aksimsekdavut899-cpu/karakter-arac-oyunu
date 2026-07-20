@@ -11,10 +11,27 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: barichello/godot-ci:4.3
+    env:
+      GODOT_VERSION: 4.3.stable
 
     steps:
       - name: Depoyu indir
         uses: actions/checkout@v4
+
+      - name: Export sablonlarini dogru yere tasi
+        run: |
+          mkdir -v -p ~/.local/share/godot/export_templates
+          mv /root/.local/share/godot/export_templates/${GODOT_VERSION} ~/.local/share/godot/export_templates/${GODOT_VERSION}
+
+      - name: Debug keystore olustur
+        run: |
+          keytool -genkeypair -v \
+            -keystore "$HOME/debug.keystore" \
+            -storepass android \
+            -alias androiddebugkey \
+            -keypass android \
+            -keyalg RSA -keysize 2048 -validity 10000 \
+            -dname "CN=Android Debug,O=Android,C=US"
 
       - name: Varliklari ice aktar
         run: |
