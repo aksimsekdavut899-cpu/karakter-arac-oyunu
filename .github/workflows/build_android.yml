@@ -13,6 +13,7 @@ jobs:
       image: barichello/godot-ci:4.3
     env:
       GODOT_VERSION: 4.3.stable
+      JAVA_HOME: /usr/lib/jvm/java-17-openjdk-amd64
 
     steps:
       - name: Depoyu indir
