@@ -1,17 +1,17 @@
 extends Node3D
 
-# Oyun baslarken calisan ana kurulum script'i.
-# GECICI EN BASIT TEST: sadece duz renk arka plan + kirmizi bir kup.
-# Harita ve gokyuzu/ortam ayarlari suphelendigimiz icin gecici olarak kaldirildi.
+# Ana kurulum script'i - haritayi (optimize edilmis MultiMesh yontemiyle)
+# yukluyor. Gokyuzu/Environment hala devre disi (bir onceki testte
+# supheliydi, harita calisinca ayri bir adimda tekrar deneyecegiz).
 
 func _ready() -> void:
-	print("Oyun baslatiliyor (basit test modu)...")
+	print("Oyun baslatiliyor...")
 
-	# Duz koyu mavi arka plan (Sky/ProceduralSkyMaterial kullanmiyoruz)
+	# Duz koyu mavi arka plan (Sky/ProceduralSkyMaterial henuz eklenmiyor)
 	var world_env = WorldEnvironment.new()
 	var env = Environment.new()
 	env.background_mode = Environment.BG_COLOR
-	env.background_color = Color(0.1, 0.15, 0.35)
+	env.background_color = Color(0.4, 0.6, 0.9)
 	world_env.environment = env
 	add_child(world_env)
 
@@ -22,24 +22,22 @@ func _ready() -> void:
 	sun.light_energy = 1.2
 	add_child(sun)
 
-	# Basit test objesi: kirmizi bir kup, kameranin tam onunde
-	var test_cube = MeshInstance3D.new()
-	test_cube.name = "TestKup"
-	var box = BoxMesh.new()
-	box.size = Vector3(2, 2, 2)
-	test_cube.mesh = box
-	var mat = StandardMaterial3D.new()
-	mat.albedo_color = Color(1, 0, 0)
-	test_cube.material_override = mat
-	test_cube.position = Vector3(0, 0, 0)
-	add_child(test_cube)
+	# Harita (MultiMesh ile optimize edilmis)
+	var map_root = Node3D.new()
+	map_root.name = "Harita"
+	add_child(map_root)
 
-	# Basit kamera, kupe bakiyor
+	var MapLoaderScript = load("res://MapLoader.gd")
+	var map_loader = MapLoaderScript.new()
+	map_loader.build_map(map_root)
+
+	# Test kamerasi - haritaya yukaridan bakiyor
 	var camera = Camera3D.new()
 	camera.name = "TestKamera"
-	camera.position = Vector3(0, 2, 6)
-	camera.look_at(Vector3(0, 0, 0), Vector3.UP)
+	camera.position = Vector3(0, 120, 120)
+	camera.rotation_degrees = Vector3(-45, 0, 0)
+	camera.far = 2000.0
 	camera.current = true
 	add_child(camera)
 
-	print("Kurulum tamamlandi (basit test modu).")
+	print("Kurulum tamamlandi.")
