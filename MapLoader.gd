@@ -1,14 +1,15 @@
 extends RefCounted
 
-# level2_layout.json dosyasini okuyup haritayi kuruyor.
+# level2_layout.json dosyasindan sadece BENZERSIZ mesh dosyalarinin
+# listesini cikarip, her birini TEK SEFER, HIC DONUSTURMEDEN (identity
+# transform) sahneye ekliyoruz.
 #
-# ONEMLI OPTIMIZASYON: 4994 obje var ama sadece 45 farkli sekil (mesh).
-# Bunlari 4994 ayri MeshInstance3D yerine, her sekil icin TEK bir
-# MultiMeshInstance3D kullanarak ekliyoruz (GPU "instancing" teknigi).
-# Bu, zayif donanimli telefonlarda COK daha az yuk bindirir.
-#
-# NOT: Unity sol-elli, Godot sag-elli koordinat sistemi kullanir,
-# bu yuzden Z eksenini ters ceviriyoruz.
+# SEBEP: Bu 45 "Combined Mesh" parcasi Unity'nin statik gruplama
+# (static batching) teknigi ile onceden DUNYA KOORDINATLARINA
+# gomulmus durumda. Yani sekil zaten oldugu gibi doğru yerde -
+# ayrica tasima/donusturme yaparsak (bircok farkli obje ayni sekli
+# farkli konumlarda kullanmis gibi gorundugu icin) sehir parcalanmis
+# gibi cizilir. Cozum: her sekli sadece bir kere, hic dokunmadan koy.
 
 const LAYOUT_PATH = "res://harita/level2_layout.json"
 const MESH_DIR = "res://harita/meshes/"
@@ -30,43 +31,19 @@ func build_map(parent: Node3D) -> void:
 		return
 
 	var entries: Array = json.data
-	print("Harita objesi sayisi: ", entries.size())
+	print("Harita giris sayisi: ", entries.size())
 
-	# Once tum transformlari mesh_file'a gore grupla
-	var groups := {}  # mesh_file -> Array[Transform3D]
-	var skipped_count := 0
-
+	# Sadece benzersiz mesh dosyalarini topla (tekrarlari at)
+	var unique_mesh_files := {}
 	for entry in entries:
 		var mesh_file = entry.get("mesh_file")
-		var transform_data = entry.get("transform")
+		if mesh_file != null:
+			unique_mesh_files[mesh_file] = true
 
-		if mesh_file == null or transform_data == null:
-			skipped_count += 1
-			continue
+	print("Benzersiz mesh sayisi: ", unique_mesh_files.size())
 
-		var pos = transform_data.get("position", {"x": 0, "y": 0, "z": 0})
-		var rot = transform_data.get("rotation", {"x": 0, "y": 0, "z": 0, "w": 1})
-		var scl = transform_data.get("scale", {"x": 1, "y": 1, "z": 1})
-
-		# Unity (sol-elli) -> Godot (sag-elli) donusumu
-		var godot_pos = Vector3(pos.x, pos.y, -pos.z)
-		var godot_quat = Quaternion(-rot.x, -rot.y, rot.z, rot.w).normalized()
-		var godot_scale = Vector3(scl.x, scl.y, scl.z)
-
-		var basis = Basis(godot_quat).scaled(godot_scale)
-		var t3d = Transform3D(basis, godot_pos)
-
-		if not groups.has(mesh_file):
-			groups[mesh_file] = []
-		groups[mesh_file].append(t3d)
-
-	print("Farkli mesh grubu: ", groups.size())
-
-	# Simdi her grup icin TEK bir MultiMeshInstance3D olustur
-	var placed_groups := 0
-	var placed_instances := 0
-
-	for mesh_file in groups.keys():
+	var placed_count := 0
+	for mesh_file in unique_mesh_files.keys():
 		var mesh_path = MESH_DIR + str(mesh_file)
 		if not ResourceLoader.exists(mesh_path):
 			continue
@@ -75,22 +52,13 @@ func build_map(parent: Node3D) -> void:
 		if mesh == null:
 			continue
 
-		var transforms: Array = groups[mesh_file]
+		var mesh_instance = MeshInstance3D.new()
+		mesh_instance.name = str(mesh_file).replace(".obj", "")
+		mesh_instance.mesh = mesh
+		# ONEMLI: transform'a HIC dokunmuyoruz, oldugu gibi (identity) birakiyoruz
+		mesh_instance.transform = Transform3D.IDENTITY
 
-		var multimesh = MultiMesh.new()
-		multimesh.transform_format = MultiMesh.TRANSFORM_3D
-		multimesh.mesh = mesh
-		multimesh.instance_count = transforms.size()
+		parent.add_child(mesh_instance)
+		placed_count += 1
 
-		for i in range(transforms.size()):
-			multimesh.set_instance_transform(i, transforms[i])
-
-		var mm_instance = MultiMeshInstance3D.new()
-		mm_instance.name = str(mesh_file).replace(".obj", "")
-		mm_instance.multimesh = multimesh
-
-		parent.add_child(mm_instance)
-		placed_groups += 1
-		placed_instances += transforms.size()
-
-	print("Yerlestirilen grup: ", placed_groups, " | Toplam obje: ", placed_instances, " | Atlanan: ", skipped_count)
+	print("Yerlestirilen benzersiz parca: ", placed_count)
