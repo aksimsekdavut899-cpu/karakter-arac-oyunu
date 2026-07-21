@@ -1,19 +1,7 @@
 extends RefCounted
 
-# level2_layout.json dosyasindan sadece BENZERSIZ mesh dosyalarinin
-# listesini cikarip, her birini TEK SEFER, HIC DONUSTURMEDEN (identity
-# transform) sahneye ekliyoruz.
-#
-# SEBEP: Bu 45 "Combined Mesh" parcasi Unity'nin statik gruplama
-# (static batching) teknigi ile onceden DUNYA KOORDINATLARINA
-# gomulmus durumda. Yani sekil zaten oldugu gibi dogru yerde -
-# ayrica tasima/donusturme yaparsak (bircok farkli obje ayni sekli
-# farkli konumlarda kullanmis gibi gorundugu icin) sehir parcalanmis
-# gibi cizilir. Cozum: her sekli sadece bir kere, hic dokunmadan koy.
-
 const LAYOUT_PATH = "res://harita/level2_layout.json"
 const MESH_DIR = "res://harita/meshes/"
-const TEXTURE_PATH = "res://harita/textures/SimpleApocalypse_542.png"
 
 
 func build_map(parent: Node3D) -> void:
@@ -34,16 +22,6 @@ return
 var entries: Array = json.data
 print("Harita giris sayisi: ", entries.size())
 
-# Doku atlasini bir kere yukle, tum parcalar bu malzemeyi paylassin
-var atlas_material = StandardMaterial3D.new()
-if ResourceLoader.exists(TEXTURE_PATH):
-var atlas_texture = load(TEXTURE_PATH)
-atlas_material.albedo_texture = atlas_texture
-atlas_material.roughness = 1.0
-else:
-push_error("Doku bulunamadi: " + TEXTURE_PATH)
-
-# Sadece benzersiz mesh dosyalarini topla (tekrarlari at)
 var unique_mesh_files := {}
 for entry in entries:
 var mesh_file = entry.get("mesh_file")
@@ -65,9 +43,7 @@ continue
 var mesh_instance = MeshInstance3D.new()
 mesh_instance.name = str(mesh_file).replace(".obj", "")
 mesh_instance.mesh = mesh
-# ONEMLI: transform'a HIC dokunmuyoruz, oldugu gibi (identity) birakiyoruz
 mesh_instance.transform = Transform3D.IDENTITY
-mesh_instance.material_override = atlas_material
 
 parent.add_child(mesh_instance)
 placed_count += 1
