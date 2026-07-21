@@ -10,9 +10,9 @@ jobs:
     name: Android Export
     runs-on: ubuntu-latest
     container:
-      image: barichello/godot-ci:4.4.1
+      image: barichello/godot-ci:4.3
     env:
-      GODOT_VERSION: 4.4.1.stable
+      GODOT_VERSION: 4.3.stable
       JAVA_HOME: /usr/lib/jvm/java-17-openjdk-amd64
 
     steps:
