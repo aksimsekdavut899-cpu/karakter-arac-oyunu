@@ -2,6 +2,7 @@ extends RefCounted
 
 const LAYOUT_PATH = "res://harita/level2_layout.json"
 const MESH_DIR = "res://harita/meshes/"
+const TEXTURE_PATH = "res://harita/textures/SimpleApocalypse_542.png"
 
 
 func build_map(parent: Node3D) -> void:
@@ -21,6 +22,16 @@ return
 
 var entries: Array = json.data
 print("Harita giris sayisi: ", entries.size())
+
+# Doku atlasini bir kere yukle - MINIMAL, unshaded (isik hesabi yok)
+var atlas_material = StandardMaterial3D.new()
+if ResourceLoader.exists(TEXTURE_PATH):
+var atlas_texture = load(TEXTURE_PATH)
+atlas_material.albedo_texture = atlas_texture
+atlas_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+atlas_material.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST
+else:
+push_error("Doku bulunamadi: " + TEXTURE_PATH)
 
 var unique_mesh_files := {}
 for entry in entries:
@@ -44,6 +55,7 @@ var mesh_instance = MeshInstance3D.new()
 mesh_instance.name = str(mesh_file).replace(".obj", "")
 mesh_instance.mesh = mesh
 mesh_instance.transform = Transform3D.IDENTITY
+mesh_instance.material_override = atlas_material
 
 parent.add_child(mesh_instance)
 placed_count += 1
