@@ -24,6 +24,17 @@ func _ready() -> void:
 	var map_loader = MapLoaderScript.new()
 	map_loader.build_map(map_root)
 
+	var PlayerScript = load("res://PlayerController.gd")
+	var player = PlayerScript.new()
+	player.name = "Oyuncu"
+	player.position = Vector3(0, 0, 0)
+	add_child(player)
+
+	var ModUIScript = load("res://ModUI.gd")
+	var mod_ui = ModUIScript.new()
+	add_child(mod_ui)
+	mod_ui.set_player(player)
+
 	var camera = Camera3D.new()
 	camera.name = "TestKamera"
 	camera.position = Vector3(0, 120, 120)
