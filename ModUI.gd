@@ -45,7 +45,7 @@ func _ready() -> void:
 	add_child(menu_panel)
 
 	var title = Label.new()
-	title.text = "ጓA9AKSIMSEK MODጓAA"
+	title.text = "« AKŞİMŞEK MOD »"
 	title.position = Vector2(0, 18)
 	title.size = Vector2(640, 40)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -113,6 +113,7 @@ func _ready() -> void:
 	if vehicle_scene != null:
 		preview_vehicle = vehicle_scene.instantiate()
 		preview_vehicle.position = Vector3(0, 0, 0)
+		preview_vehicle.scale = Vector3(0.65, 0.65, 0.65)
 		preview_viewport.add_child(preview_vehicle)
 
 	var preview_rect = TextureRect.new()
@@ -159,7 +160,7 @@ func _show_vehicle_preview() -> void:
 	preview_character.visible = false
 	if preview_vehicle:
 		preview_vehicle.visible = true
-	preview_camera.position = Vector3(0, 2.2, 7)
+	preview_camera.position = Vector3(2.4, 1.5, 4.3)
 	preview_camera.look_at(Vector3(0, 0.6, 0), Vector3.UP)
 
 
