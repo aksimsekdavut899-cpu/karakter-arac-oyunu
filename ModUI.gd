@@ -9,6 +9,7 @@ var drag_offset := Vector2.ZERO
 var drag_start_pos := Vector2.ZERO
 var preview_dragging := false
 var preview_drag_start := Vector2.ZERO
+var icon_touch_active := false
 
 var preview_viewport: SubViewport
 var preview_character: MeshInstance3D
@@ -29,7 +30,6 @@ func _ready() -> void:
 	icon_button.position = Vector2(16, 16)
 	icon_button.size = Vector2(200, 200)
 	icon_button.pressed.connect(_on_icon_pressed)
-	icon_button.gui_input.connect(_on_icon_gui_input)
 	add_child(icon_button)
 
 	menu_panel = Panel.new()
@@ -54,13 +54,30 @@ func _ready() -> void:
 	add_child(menu_panel)
 
 	var title = Label.new()
-	title.text = "« AKŞİMŞEK MOD »"
+	title.text = "AKŞİMŞEK MOD"
 	title.position = Vector2(0, 18)
 	title.size = Vector2(640, 40)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	title.add_theme_font_size_override("font_size", 26)
+	title.add_theme_font_size_override("font_size", 34)
 	title.add_theme_color_override("font_color", Color(0.35, 1.0, 0.4))
+	title.add_theme_color_override("font_outline_color", Color(0.15, 0.9, 0.25, 0.85))
+	title.add_theme_constant_override("outline_size", 6)
 	menu_panel.add_child(title)
+
+	var bolt = Label.new()
+	bolt.text = "⚡"
+	bolt.position = Vector2(0, 46)
+	bolt.size = Vector2(640, 24)
+	bolt.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	bolt.add_theme_font_size_override("font_size", 18)
+	bolt.add_theme_color_override("font_color", Color(0.35, 1.0, 0.4))
+	menu_panel.add_child(bolt)
+
+	var divider = ColorRect.new()
+	divider.color = Color(0.25, 1.0, 0.35, 0.5)
+	divider.position = Vector2(20, 64)
+	divider.size = Vector2(600, 2)
+	menu_panel.add_child(divider)
 
 	tab_character = Button.new()
 	tab_character.text = "KARAKTER"
@@ -78,8 +95,8 @@ func _ready() -> void:
 	tab_vehicle.pressed.connect(_on_tab_vehicle)
 	menu_panel.add_child(tab_vehicle)
 
-	tab_character.modulate = Color(1, 1, 1)
-	tab_vehicle.modulate = Color(0.5, 0.5, 0.5)
+	_style_tab(tab_character, true)
+	_style_tab(tab_vehicle, false)
 
 	var preview_button = Button.new()
 	preview_button.flat = true
@@ -98,13 +115,14 @@ func _ready() -> void:
 	var preview_env = WorldEnvironment.new()
 	var penv = Environment.new()
 	penv.background_mode = Environment.BG_COLOR
-	penv.background_color = Color(0.15, 0.17, 0.22)
+	penv.background_color = Color(0.02, 0.02, 0.03)
 	preview_env.environment = penv
 	preview_viewport.add_child(preview_env)
 
 	var preview_light = DirectionalLight3D.new()
 	preview_light.rotation_degrees = Vector3(-40, -30, 0)
 	preview_viewport.add_child(preview_light)
+	_add_preview_grid_floor()
 
 	preview_camera = Camera3D.new()
 	preview_viewport.add_child(preview_camera)
@@ -150,6 +168,46 @@ func _ready() -> void:
 	_show_character_preview()
 
 
+func _input(event: InputEvent) -> void:
+	if event is InputEventScreenTouch:
+		if event.pressed:
+			var r = Rect2(icon_button.position, icon_button.size)
+			if r.has_point(event.position):
+				icon_touch_active = true
+				is_dragging = false
+				drag_start_pos = event.position
+				drag_offset = event.position - icon_button.position
+		else:
+			icon_touch_active = false
+			is_dragging = false
+	elif event is InputEventScreenDrag:
+		if icon_touch_active:
+			if event.position.distance_to(drag_start_pos) > 10:
+				is_dragging = true
+			if is_dragging:
+				icon_button.position = event.position - drag_offset
+				_update_panel_position()
+	elif event is InputEventMouseButton:
+		if event.button_index == MOUSE_BUTTON_LEFT:
+			if event.pressed:
+				var r2 = Rect2(icon_button.position, icon_button.size)
+				if r2.has_point(event.position):
+					icon_touch_active = true
+					is_dragging = false
+					drag_start_pos = event.position
+					drag_offset = event.position - icon_button.position
+			else:
+				icon_touch_active = false
+				is_dragging = false
+	elif event is InputEventMouseMotion:
+		if icon_touch_active and event.button_mask & MOUSE_BUTTON_MASK_LEFT:
+			if event.position.distance_to(drag_start_pos) > 10:
+				is_dragging = true
+			if is_dragging:
+				icon_button.position = event.position - drag_offset
+				_update_panel_position()
+
+
 func _on_icon_pressed() -> void:
 	if is_dragging:
 		return
@@ -192,18 +250,70 @@ func _update_panel_position() -> void:
 	menu_panel.position = Vector2(icon_button.position.x, icon_button.position.y + icon_button.size.y + 10)
 
 
+func _add_preview_grid_floor() -> void:
+	var grid_mesh = ArrayMesh.new()
+	var verts = PackedVector3Array()
+	var count = 10
+	var extent = 5.0
+	var step = extent * 2.0 / count
+	for i in range(count + 1):
+		var x = -extent + i * step
+		verts.append(Vector3(x, 0, -extent))
+		verts.append(Vector3(x, 0, extent))
+	for i in range(count + 1):
+		var z = -extent + i * step
+		verts.append(Vector3(-extent, 0, z))
+		verts.append(Vector3(extent, 0, z))
+	var arrays: Array = []
+	arrays.resize(Mesh.ARRAY_MAX)
+	arrays[Mesh.ARRAY_VERTEX] = verts
+	grid_mesh.add_surface_from_arrays(Mesh.PRIMITIVE_LINES, arrays)
+	var grid_instance = MeshInstance3D.new()
+	grid_instance.mesh = grid_mesh
+	var grid_mat = StandardMaterial3D.new()
+	grid_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	grid_mat.albedo_color = Color(0.25, 1.0, 0.35, 0.55)
+	grid_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	grid_instance.material_override = grid_mat
+	grid_instance.position = Vector3(0, -0.05, 0)
+	preview_viewport.add_child(grid_instance)
+
+
 func _on_tab_character() -> void:
 	selected_mode = "character"
 	_show_character_preview()
-	tab_character.modulate = Color(1, 1, 1)
-	tab_vehicle.modulate = Color(0.5, 0.5, 0.5)
+	_style_tab(tab_character, true)
+	_style_tab(tab_vehicle, false)
 
 
 func _on_tab_vehicle() -> void:
 	selected_mode = "vehicle"
 	_show_vehicle_preview()
-	tab_vehicle.modulate = Color(1, 1, 1)
-	tab_character.modulate = Color(0.5, 0.5, 0.5)
+	_style_tab(tab_vehicle, true)
+	_style_tab(tab_character, false)
+
+
+func _style_tab(btn: Button, active: bool) -> void:
+	var sb = StyleBoxFlat.new()
+	sb.corner_radius_top_left = 10
+	sb.corner_radius_top_right = 10
+	sb.corner_radius_bottom_left = 10
+	sb.corner_radius_bottom_right = 10
+	sb.border_width_left = 2
+	sb.border_width_right = 2
+	sb.border_width_top = 2
+	sb.border_width_bottom = 2
+	if active:
+		sb.bg_color = Color(0.06, 0.16, 0.08, 0.9)
+		sb.border_color = Color(0.35, 1.0, 0.4)
+		btn.add_theme_color_override("font_color", Color(1, 1, 1))
+	else:
+		sb.bg_color = Color(0.05, 0.05, 0.05, 0.9)
+		sb.border_color = Color(0.15, 0.15, 0.15)
+		btn.add_theme_color_override("font_color", Color(0.55, 0.55, 0.55))
+	btn.add_theme_stylebox_override("normal", sb)
+	btn.add_theme_stylebox_override("hover", sb)
+	btn.add_theme_stylebox_override("pressed", sb)
 
 
 func _show_character_preview() -> void:
