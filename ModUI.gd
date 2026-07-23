@@ -18,10 +18,11 @@ var preview_camera: Camera3D
 var tab_character: Button
 var tab_vehicle: Button
 var status_label: Label
+var icon_button: TextureButton
 
 
 func _ready() -> void:
-	var icon_button = TextureButton.new()
+	icon_button = TextureButton.new()
 	icon_button.texture_normal = load("res://ui/mod_icon.png")
 	icon_button.ignore_texture_size = true
 	icon_button.stretch_mode = TextureButton.STRETCH_SCALE
