@@ -153,6 +153,30 @@ func _ready() -> void:
 		preview_vehicle.scale = Vector3(0.78, 0.78, 0.78)
 		preview_viewport.add_child(preview_vehicle)
 		_apply_hologram(preview_vehicle, Color(0.2, 1.0, 0.4))
+	else:
+		var debug_box = MeshInstance3D.new()
+		var db = BoxMesh.new()
+		db.size = Vector3(1, 1, 1)
+		debug_box.mesh = db
+		var db_mat = StandardMaterial3D.new()
+		db_mat.albedo_color = Color(1, 0, 1)
+		db_mat.emission_enabled = true
+		db_mat.emission = Color(1, 0, 1)
+		debug_box.material_override = db_mat
+		debug_box.position = Vector3(0, 0.5, 0)
+		preview_viewport.add_child(debug_box)
+	else:
+		var debug_box = MeshInstance3D.new()
+		var db = BoxMesh.new()
+		db.size = Vector3(1, 1, 1)
+		debug_box.mesh = db
+		var db_mat = StandardMaterial3D.new()
+		db_mat.albedo_color = Color(1, 0, 1)
+		db_mat.emission_enabled = true
+		db_mat.emission = Color(1, 0, 1)
+		debug_box.material_override = db_mat
+		debug_box.position = Vector3(0, 0.5, 0)
+		preview_viewport.add_child(debug_box)
 
 	var preview_rect = TextureRect.new()
 	preview_rect.position = Vector2(20, 145)
@@ -256,16 +280,18 @@ func _update_panel_position() -> void:
 func _apply_hologram(node: Node, base_color: Color) -> void:
 	if node is MeshInstance3D:
 		var holo_mat = StandardMaterial3D.new()
-		holo_mat.albedo_color = Color(base_color.r, base_color.g, base_color.b, 0.35)
+		holo_mat.albedo_color = Color(base_color.r, base_color.g, base_color.b, 0.06)
 		holo_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 		holo_mat.emission_enabled = true
 		holo_mat.emission = base_color
-		holo_mat.emission_energy_multiplier = 1.4
+		holo_mat.emission_energy_multiplier = 2.2
 		holo_mat.rim_enabled = true
-		holo_mat.rim = 0.85
-		holo_mat.rim_tint = 0.4
+		holo_mat.rim = 1.0
+		holo_mat.rim_tint = 0.85
 		holo_mat.metallic = 0.0
 		holo_mat.roughness = 1.0
+		holo_mat.grow_amount = 0.01
+		holo_mat.grow = true
 		node.material_override = holo_mat
 	for child in node.get_children():
 		_apply_hologram(child, base_color)
@@ -349,7 +375,7 @@ func _show_vehicle_preview() -> void:
 	preview_character.visible = false
 	if preview_vehicle:
 		preview_vehicle.visible = true
-	preview_camera.position = Vector3(1.8, 1.3, -3.2)
+	preview_camera.position = Vector3(2.4, 1.5, 4.3)
 	preview_camera.look_at(Vector3(0, 0.6, 0), Vector3.UP)
 
 
