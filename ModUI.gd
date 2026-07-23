@@ -12,7 +12,7 @@ var preview_drag_start := Vector2.ZERO
 var icon_touch_active := false
 
 var preview_viewport: SubViewport
-var preview_character: MeshInstance3D
+var preview_character: Node3D
 var preview_vehicle: Node3D
 var preview_camera: Camera3D
 
@@ -102,7 +102,7 @@ func _ready() -> void:
 	preview_button.flat = true
 	preview_button.position = Vector2(20, 145)
 	preview_button.size = Vector2(600, 240)
-	preview_button.gui_input.connect(_on_preview_gui_input)
+	preview_button.pressed.connect(_on_preview_tapped)
 	menu_panel.add_child(preview_button)
 
 	preview_viewport = SubViewport.new()
@@ -127,29 +127,32 @@ func _ready() -> void:
 	preview_camera = Camera3D.new()
 	preview_viewport.add_child(preview_camera)
 
-	preview_character = MeshInstance3D.new()
-	var char_quad = QuadMesh.new()
-	char_quad.size = Vector2(1.6, 2.4)
-	preview_character.mesh = char_quad
-	var char_mat = StandardMaterial3D.new()
-	char_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	char_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	var char_tex = load("res://ui/character_photo.png")
-	if char_tex != null:
-		char_mat.albedo_texture = char_tex
-	else:
-		char_mat.albedo_color = Color(0.2, 0.4, 0.9)
-	preview_character.material_override = char_mat
-	preview_character.position = Vector3(0, 1.2, 0)
+	preview_character = Node3D.new()
+	preview_character.position = Vector3(0, 0, 0)
+	var pc_parts = []
+	pc_parts.append([Vector3(0.4, 0.4, 0.4), Vector3(0, 1.7, 0)])
+	pc_parts.append([Vector3(0.5, 0.7, 0.3), Vector3(0, 1.15, 0)])
+	pc_parts.append([Vector3(0.18, 0.6, 0.18), Vector3(-0.34, 1.15, 0)])
+	pc_parts.append([Vector3(0.18, 0.6, 0.18), Vector3(0.34, 1.15, 0)])
+	pc_parts.append([Vector3(0.2, 0.7, 0.2), Vector3(-0.13, 0.45, 0)])
+	pc_parts.append([Vector3(0.2, 0.7, 0.2), Vector3(0.13, 0.45, 0)])
+	for part in pc_parts:
+		var part_mesh = MeshInstance3D.new()
+		var box = BoxMesh.new()
+		box.size = part[0]
+		part_mesh.mesh = box
+		part_mesh.position = part[1]
+		preview_character.add_child(part_mesh)
 	preview_viewport.add_child(preview_character)
+	_apply_hologram(preview_character, Color(0.2, 1.0, 0.4))
 
 	var vehicle_scene = load("res://harita/vehicles/bmw_m5.glb")
 	if vehicle_scene != null:
 		preview_vehicle = vehicle_scene.instantiate()
 		preview_vehicle.position = Vector3(0, 0, 0)
-		preview_vehicle.rotation.y = PI
 		preview_vehicle.scale = Vector3(0.78, 0.78, 0.78)
 		preview_viewport.add_child(preview_vehicle)
+		_apply_hologram(preview_vehicle, Color(0.2, 1.0, 0.4))
 
 	var preview_rect = TextureRect.new()
 	preview_rect.position = Vector2(20, 145)
@@ -250,10 +253,28 @@ func _update_panel_position() -> void:
 	menu_panel.position = Vector2(icon_button.position.x, icon_button.position.y + icon_button.size.y + 10)
 
 
+func _apply_hologram(node: Node, base_color: Color) -> void:
+	if node is MeshInstance3D:
+		var holo_mat = StandardMaterial3D.new()
+		holo_mat.albedo_color = Color(base_color.r, base_color.g, base_color.b, 0.35)
+		holo_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		holo_mat.emission_enabled = true
+		holo_mat.emission = base_color
+		holo_mat.emission_energy_multiplier = 1.4
+		holo_mat.rim_enabled = true
+		holo_mat.rim = 0.85
+		holo_mat.rim_tint = 0.4
+		holo_mat.metallic = 0.0
+		holo_mat.roughness = 1.0
+		node.material_override = holo_mat
+	for child in node.get_children():
+		_apply_hologram(child, base_color)
+
+
 func _add_preview_grid_floor() -> void:
 	var grid_mesh = ArrayMesh.new()
 	var verts = PackedVector3Array()
-	var count = 10
+	var count = 16
 	var extent = 5.0
 	var step = extent * 2.0 / count
 	for i in range(count + 1):
@@ -272,7 +293,7 @@ func _add_preview_grid_floor() -> void:
 	grid_instance.mesh = grid_mesh
 	var grid_mat = StandardMaterial3D.new()
 	grid_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	grid_mat.albedo_color = Color(0.25, 1.0, 0.35, 0.55)
+	grid_mat.albedo_color = Color(0.3, 1.0, 0.4, 0.9)
 	grid_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	grid_instance.material_override = grid_mat
 	grid_instance.position = Vector3(0, -0.05, 0)
@@ -328,7 +349,7 @@ func _show_vehicle_preview() -> void:
 	preview_character.visible = false
 	if preview_vehicle:
 		preview_vehicle.visible = true
-	preview_camera.position = Vector3(1.6, 1.2, 2.6)
+	preview_camera.position = Vector3(1.8, 1.3, -3.2)
 	preview_camera.look_at(Vector3(0, 0.6, 0), Vector3.UP)
 
 
@@ -345,36 +366,3 @@ func _on_preview_tapped() -> void:
 
 func set_player(p: Node3D) -> void:
 	player = p
-
-
-func _on_preview_gui_input(event: InputEvent) -> void:
-	if event is InputEventScreenTouch:
-		if event.pressed:
-			preview_dragging = false
-			preview_drag_start = event.position
-		else:
-			if not preview_dragging:
-				_on_preview_tapped()
-			preview_dragging = false
-	elif event is InputEventScreenDrag:
-		if event.position.distance_to(preview_drag_start) > 8:
-			preview_dragging = true
-		var current = preview_character if selected_mode == "character" else preview_vehicle
-		if current:
-			current.rotation.y -= event.relative.x * 0.01
-	elif event is InputEventMouseButton:
-		if event.button_index == MOUSE_BUTTON_LEFT:
-			if event.pressed:
-				preview_dragging = false
-				preview_drag_start = event.position
-			else:
-				if not preview_dragging:
-					_on_preview_tapped()
-				preview_dragging = false
-	elif event is InputEventMouseMotion:
-		if event.button_mask & MOUSE_BUTTON_MASK_LEFT:
-			if event.position.distance_to(preview_drag_start) > 8:
-				preview_dragging = true
-			var current = preview_character if selected_mode == "character" else preview_vehicle
-			if current:
-				current.rotation.y -= event.relative.x * 0.01
