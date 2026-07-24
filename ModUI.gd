@@ -28,7 +28,7 @@ func _ready() -> void:
 	icon_button.ignore_texture_size = true
 	icon_button.stretch_mode = TextureButton.STRETCH_SCALE
 	icon_button.position = Vector2(16, 16)
-	icon_button.size = Vector2(200, 200)
+	icon_button.size = Vector2(160, 160)
 	icon_button.pressed.connect(_on_icon_pressed)
 	add_child(icon_button)
 
@@ -39,9 +39,9 @@ func _ready() -> void:
 
 	var panel_style = StyleBoxFlat.new()
 	panel_style.bg_color = Color(0.07, 0.07, 0.09, 0.95)
-	panel_style.border_color = Color(0.25, 1.0, 0.35)
-	panel_style.shadow_size = 16
-	panel_style.shadow_color = Color(0.1, 0.9, 0.3, 0.55)
+	panel_style.border_color = Color(0.85, 0.65, 0.15)
+	panel_style.shadow_size = 8
+	panel_style.shadow_color = Color(0, 0, 0, 0.5)
 	panel_style.border_width_left = 3
 	panel_style.border_width_right = 3
 	panel_style.border_width_top = 3
@@ -59,9 +59,9 @@ func _ready() -> void:
 	title.size = Vector2(640, 40)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.add_theme_font_size_override("font_size", 34)
-	title.add_theme_color_override("font_color", Color(0.35, 1.0, 0.4))
-	title.add_theme_color_override("font_outline_color", Color(0.15, 0.9, 0.25, 0.85))
-	title.add_theme_constant_override("outline_size", 6)
+	title.add_theme_color_override("font_color", Color(0.85, 0.65, 0.15))
+	title.add_theme_color_override("font_outline_color", Color(0.25, 0.15, 0.02, 0.8))
+	title.add_theme_constant_override("outline_size", 2)
 	menu_panel.add_child(title)
 
 	var bolt = Label.new()
@@ -74,7 +74,7 @@ func _ready() -> void:
 	menu_panel.add_child(bolt)
 
 	var divider = ColorRect.new()
-	divider.color = Color(0.25, 1.0, 0.35, 0.5)
+	divider.color = Color(0.85, 0.65, 0.15, 0.6)
 	divider.position = Vector2(20, 64)
 	divider.size = Vector2(600, 2)
 	menu_panel.add_child(divider)
@@ -326,7 +326,7 @@ func _style_tab(btn: Button, active: bool) -> void:
 	sb.border_width_bottom = 2
 	if active:
 		sb.bg_color = Color(0.06, 0.16, 0.08, 0.9)
-		sb.border_color = Color(0.35, 1.0, 0.4)
+		sb.border_color = Color(0.85, 0.65, 0.15)
 		btn.add_theme_color_override("font_color", Color(1, 1, 1))
 	else:
 		sb.bg_color = Color(0.05, 0.05, 0.05, 0.9)
@@ -349,7 +349,7 @@ func _show_vehicle_preview() -> void:
 	preview_character.visible = false
 	if preview_vehicle:
 		preview_vehicle.visible = true
-	preview_camera.position = Vector3(1.8, 1.3, -3.2)
+	preview_camera.position = Vector3(2.4, 1.5, 4.3)
 	preview_camera.look_at(Vector3(0, 0.6, 0), Vector3.UP)
 
 
