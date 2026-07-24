@@ -153,11 +153,6 @@ func _process_vehicle(delta: float) -> void:
 	position += forward * current_speed * delta
 
 	wheel_spin += (current_speed / wheel_radius) * delta
-	var steer_rad2 = deg_to_rad(steer_angle)
-	for w in front_wheels:
-		w.rotation = Vector3(wheel_spin, steer_rad2, 0)
-	for w in rear_wheels:
-		w.rotation = Vector3(wheel_spin, 0, 0)
 
 	if vehicle_node:
 		var speed_ratio2 = clamp(abs(current_speed) / max_speed, 0.0, 1.0)

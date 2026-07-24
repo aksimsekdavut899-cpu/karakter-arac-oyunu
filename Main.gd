@@ -70,6 +70,11 @@ func _ready() -> void:
 	player.set_controls(controls_ui)
 	controls_ref = controls_ui
 
+	var SensorScript = load("res://SensorUI.gd")
+	var sensor_ui = SensorScript.new()
+	add_child(sensor_ui)
+	sensor_ui.setup_world(player, map_root)
+
 	print("Kurulum tamamlandi.")
 
 
