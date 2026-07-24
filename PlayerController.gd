@@ -8,16 +8,21 @@ var controls: Node = null
 var move_speed := 4.0
 
 var current_speed := 0.0
-var max_speed := 14.0
-var reverse_max_speed := 6.0
-var accel_rate := 11.0
-var brake_rate := 14.0
-var friction_rate := 5.0
+var max_speed := 28.0
+var reverse_max_speed := 12.0
+var accel_rate := 20.0
+var brake_rate := 22.0
+var friction_rate := 6.0
 var wheelbase := 2.6
 
 var steer_angle := 0.0
-var max_steer_angle := 32.0
-var steer_speed := 220.0
+var max_steer_angle := 38.0
+var steer_lerp_speed := 9.0
+
+var front_wheels := []
+var rear_wheels := []
+var wheel_spin := 0.0
+var wheel_radius := 0.33
 
 var debug_layer: CanvasLayer
 var debug_label: Label
@@ -43,31 +48,61 @@ func _ready() -> void:
 		vehicle_node.scale = Vector3(0.65, 0.65, 0.65)
 		vehicle_node.visible = false
 		add_child(vehicle_node)
+		_identify_wheels(vehicle_node)
 
 		debug_layer = CanvasLayer.new()
 		debug_layer.layer = 6
 		add_child(debug_layer)
 		debug_label = Label.new()
 		debug_label.position = Vector2(20, 20)
-		debug_label.size = Vector2(650, 900)
-		debug_label.add_theme_font_size_override("font_size", 13)
+		debug_label.size = Vector2(650, 200)
+		debug_label.add_theme_font_size_override("font_size", 14)
 		debug_label.add_theme_color_override("font_color", Color(1, 1, 0))
 		debug_layer.add_child(debug_label)
-		debug_label.text = _collect_node_names(vehicle_node, 0)
+		debug_label.text = "On tekerlek: " + str(front_wheels.size()) + " | Arka tekerlek: " + str(rear_wheels.size())
 		debug_label.visible = false
 	else:
 		push_error("BMW modeli yuklenemedi!")
 
 
-func _collect_node_names(node: Node, depth: int) -> String:
-	var s = ""
+func _identify_wheels(root: Node3D) -> void:
+	var candidates = []
+	_collect_mesh_centers(root, candidates)
+	if candidates.size() < 4:
+		return
+
+	var min_y = candidates[0][1].y
+	var max_y = candidates[0][1].y
+	var min_z = candidates[0][1].z
+	var max_z = candidates[0][1].z
+	for c in candidates:
+		min_y = min(min_y, c[1].y)
+		max_y = max(max_y, c[1].y)
+		min_z = min(min_z, c[1].z)
+		max_z = max(max_z, c[1].z)
+
+	var y_threshold = min_y + (max_y - min_y) * 0.35
+	var z_mid = (min_z + max_z) * 0.5
+
+	for c in candidates:
+		var node = c[0]
+		var center = c[1]
+		if center.y <= y_threshold:
+			if center.z < z_mid:
+				front_wheels.append(node)
+			else:
+				rear_wheels.append(node)
+
+
+func _collect_mesh_centers(node: Node, out_list: Array) -> void:
 	for child in node.get_children():
-		var prefix = ""
-		for i in range(depth):
-			prefix += "  "
-		s += prefix + child.name + " (" + child.get_class() + ")\n"
-		s += _collect_node_names(child, depth + 1)
-	return s
+		if child is MeshInstance3D and child.mesh != null:
+			var aabb = child.mesh.get_aabb()
+			var local_center = aabb.position + aabb.size / 2.0
+			var world_center = child.global_transform * local_center
+			var rel_center = vehicle_node.to_local(world_center)
+			out_list.append([child, rel_center])
+		_collect_mesh_centers(child, out_list)
 
 
 func _process(delta: float) -> void:
@@ -95,7 +130,7 @@ func _process_vehicle(delta: float) -> void:
 		steer_input -= 1.0
 
 	var target_steer_angle = steer_input * max_steer_angle
-	steer_angle = move_toward(steer_angle, target_steer_angle, steer_speed * delta)
+	steer_angle = lerp(steer_angle, target_steer_angle, clamp(steer_lerp_speed * delta, 0.0, 1.0))
 
 	if controls.is_accel():
 		current_speed = move_toward(current_speed, max_speed, accel_rate * delta)
@@ -116,6 +151,13 @@ func _process_vehicle(delta: float) -> void:
 
 	var forward = -global_transform.basis.z
 	position += forward * current_speed * delta
+
+	wheel_spin += (current_speed / wheel_radius) * delta
+	var steer_rad2 = deg_to_rad(steer_angle)
+	for w in front_wheels:
+		w.rotation = Vector3(wheel_spin, steer_rad2, 0)
+	for w in rear_wheels:
+		w.rotation = Vector3(wheel_spin, 0, 0)
 
 	if vehicle_node:
 		var speed_ratio2 = clamp(abs(current_speed) / max_speed, 0.0, 1.0)

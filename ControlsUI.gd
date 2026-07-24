@@ -24,6 +24,9 @@ var steer_right_held := false
 var touch_actions := {}
 var look_touch_index := -1
 var look_delta := Vector2.ZERO
+var free_touches := {}
+var last_pinch_dist := 0.0
+var zoom_delta := 0.0
 
 
 func _ready() -> void:
@@ -223,3 +226,9 @@ func get_look_delta() -> Vector2:
 	var d = look_delta
 	look_delta = Vector2.ZERO
 	return d
+
+
+func get_zoom_delta() -> float:
+	var z = zoom_delta
+	zoom_delta = 0.0
+	return z
