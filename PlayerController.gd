@@ -6,8 +6,21 @@ var is_vehicle := false
 var controls: Node = null
 
 var move_speed := 4.0
-var vehicle_speed := 9.0
-var turn_speed := 2.0
+
+var current_speed := 0.0
+var max_speed := 14.0
+var reverse_max_speed := 6.0
+var accel_rate := 11.0
+var brake_rate := 14.0
+var friction_rate := 5.0
+var wheelbase := 2.6
+
+var steer_angle := 0.0
+var max_steer_angle := 32.0
+var steer_speed := 220.0
+
+var debug_layer: CanvasLayer
+var debug_label: Label
 
 
 func _ready() -> void:
@@ -30,8 +43,31 @@ func _ready() -> void:
 		vehicle_node.scale = Vector3(0.65, 0.65, 0.65)
 		vehicle_node.visible = false
 		add_child(vehicle_node)
+
+		debug_layer = CanvasLayer.new()
+		debug_layer.layer = 6
+		add_child(debug_layer)
+		debug_label = Label.new()
+		debug_label.position = Vector2(20, 20)
+		debug_label.size = Vector2(650, 900)
+		debug_label.add_theme_font_size_override("font_size", 13)
+		debug_label.add_theme_color_override("font_color", Color(1, 1, 0))
+		debug_layer.add_child(debug_label)
+		debug_label.text = _collect_node_names(vehicle_node, 0)
+		debug_label.visible = false
 	else:
 		push_error("BMW modeli yuklenemedi!")
+
+
+func _collect_node_names(node: Node, depth: int) -> String:
+	var s = ""
+	for child in node.get_children():
+		var prefix = ""
+		for i in range(depth):
+			prefix += "  "
+		s += prefix + child.name + " (" + child.get_class() + ")\n"
+		s += _collect_node_names(child, depth + 1)
+	return s
 
 
 func _process(delta: float) -> void:
@@ -52,22 +88,39 @@ func _process_character(delta: float) -> void:
 
 
 func _process_vehicle(delta: float) -> void:
+	var steer_input = 0.0
+	if controls.is_steer_left():
+		steer_input += 1.0
+	if controls.is_steer_right():
+		steer_input -= 1.0
+
+	var target_steer_angle = steer_input * max_steer_angle
+	steer_angle = move_toward(steer_angle, target_steer_angle, steer_speed * delta)
+
+	if controls.is_accel():
+		current_speed = move_toward(current_speed, max_speed, accel_rate * delta)
+	elif controls.is_brake():
+		if current_speed > 0.05:
+			current_speed = move_toward(current_speed, 0.0, brake_rate * delta)
+		else:
+			current_speed = move_toward(current_speed, -reverse_max_speed, accel_rate * 0.7 * delta)
+	else:
+		current_speed = move_toward(current_speed, 0.0, friction_rate * delta)
+
+	if abs(current_speed) > 0.05:
+		var speed_ratio = clamp(abs(current_speed) / max_speed, 0.0, 1.0)
+		var effective_steer_deg = steer_angle * (1.15 - speed_ratio * 0.45)
+		var steer_rad = deg_to_rad(effective_steer_deg)
+		var turn_rate = (current_speed / wheelbase) * tan(steer_rad)
+		rotate_y(turn_rate * delta)
+
 	var forward = -global_transform.basis.z
-	var moving_forward = controls.is_accel()
-	var moving_back = controls.is_brake()
-	if moving_forward:
-		position += forward * vehicle_speed * delta
-	if moving_back:
-		position -= forward * vehicle_speed * 0.6 * delta
-	if moving_forward or moving_back:
-		var turn_dir = 0.0
-		if controls.is_steer_left():
-			turn_dir += 1.0
-		if controls.is_steer_right():
-			turn_dir -= 1.0
-		if turn_dir != 0.0:
-			var turn_multiplier = 1.0 if moving_forward else -1.0
-			rotate_y(turn_speed * turn_dir * turn_multiplier * delta)
+	position += forward * current_speed * delta
+
+	if vehicle_node:
+		var speed_ratio2 = clamp(abs(current_speed) / max_speed, 0.0, 1.0)
+		var target_lean = clamp(-steer_angle * 0.08 * speed_ratio2, -5.0, 5.0)
+		vehicle_node.rotation_degrees.z = lerp(vehicle_node.rotation_degrees.z, target_lean, 6.0 * delta)
 
 
 func set_controls(c: Node) -> void:
@@ -86,16 +139,23 @@ func switch_to_vehicle() -> void:
 		vehicle_node.visible = true
 	character_mesh.visible = false
 	is_vehicle = true
+	current_speed = 0.0
+	steer_angle = 0.0
 	if controls:
 		controls.set_vehicle_mode(true)
+	if debug_label:
+		debug_label.visible = true
 	print("Araca gecildi.")
 
 
 func switch_to_character() -> void:
 	if vehicle_node:
 		vehicle_node.visible = false
+		vehicle_node.rotation_degrees.z = 0.0
 	character_mesh.visible = true
 	is_vehicle = false
 	if controls:
 		controls.set_vehicle_mode(false)
+	if debug_label:
+		debug_label.visible = false
 	print("Karaktere gecildi.")
