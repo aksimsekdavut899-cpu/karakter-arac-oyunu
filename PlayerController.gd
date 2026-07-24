@@ -27,6 +27,7 @@ func _ready() -> void:
 	if vehicle_scene != null:
 		vehicle_node = vehicle_scene.instantiate()
 		vehicle_node.position = Vector3(0, 0, 0)
+		vehicle_node.scale = Vector3(0.65, 0.65, 0.65)
 		vehicle_node.visible = false
 		add_child(vehicle_node)
 	else:
@@ -52,14 +53,21 @@ func _process_character(delta: float) -> void:
 
 func _process_vehicle(delta: float) -> void:
 	var forward = -global_transform.basis.z
-	if controls.is_accel():
+	var moving_forward = controls.is_accel()
+	var moving_back = controls.is_brake()
+	if moving_forward:
 		position += forward * vehicle_speed * delta
-	if controls.is_brake():
+	if moving_back:
 		position -= forward * vehicle_speed * 0.6 * delta
-	if controls.is_steer_left():
-		rotate_y(turn_speed * delta)
-	if controls.is_steer_right():
-		rotate_y(-turn_speed * delta)
+	if moving_forward or moving_back:
+		var turn_dir = 0.0
+		if controls.is_steer_left():
+			turn_dir += 1.0
+		if controls.is_steer_right():
+			turn_dir -= 1.0
+		if turn_dir != 0.0:
+			var turn_multiplier = 1.0 if moving_forward else -1.0
+			rotate_y(turn_speed * turn_dir * turn_multiplier * delta)
 
 
 func set_controls(c: Node) -> void:

@@ -109,7 +109,7 @@ func _ready() -> void:
 	preview_viewport.size = Vector2i(600, 240)
 	preview_viewport.own_world_3d = true
 	preview_viewport.transparent_bg = false
-	preview_viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+	preview_viewport.render_target_update_mode = SubViewport.UPDATE_WHEN_VISIBLE
 	add_child(preview_viewport)
 
 	var preview_env = WorldEnvironment.new()

@@ -1,5 +1,15 @@
 extends Node3D
 
+var player_ref: Node3D
+var camera_rig: Node3D
+var spring_arm_ref: SpringArm3D
+var controls_ref: Node
+
+var cam_yaw := 0.0
+var cam_pitch := -12.0
+var look_sensitivity := 0.25
+
+
 func _ready() -> void:
 	print("Oyun baslatiliyor...")
 
@@ -29,18 +39,24 @@ func _ready() -> void:
 	player.name = "Oyuncu"
 	player.position = Vector3(0, 0, 0)
 	add_child(player)
+	player_ref = player
 
 	var ModUIScript = load("res://ModUI.gd")
 	var mod_ui = ModUIScript.new()
 	add_child(mod_ui)
 	mod_ui.set_player(player)
 
+	camera_rig = Node3D.new()
+	camera_rig.name = "KameraRig"
+	add_child(camera_rig)
+
 	var spring_arm = SpringArm3D.new()
 	spring_arm.name = "KameraKolu"
 	spring_arm.position = Vector3(0, 2.2, 0)
-	spring_arm.rotation_degrees = Vector3(-12, 0, 0)
+	spring_arm.rotation_degrees = Vector3(cam_pitch, 0, 0)
 	spring_arm.spring_length = 6.0
-	player.add_child(spring_arm)
+	camera_rig.add_child(spring_arm)
+	spring_arm_ref = spring_arm
 
 	var camera = Camera3D.new()
 	camera.name = "TakipKamerasi"
@@ -51,5 +67,22 @@ func _ready() -> void:
 	var controls_ui = ControlsScript.new()
 	add_child(controls_ui)
 	player.set_controls(controls_ui)
+	controls_ref = controls_ui
 
 	print("Kurulum tamamlandi.")
+
+
+func _process(delta: float) -> void:
+	if not player_ref or not camera_rig:
+		return
+	camera_rig.global_position = player_ref.global_position
+
+	if controls_ref:
+		var look = controls_ref.get_look_delta()
+		if look.length() > 0.0:
+			cam_yaw -= look.x * look_sensitivity
+			cam_pitch -= look.y * look_sensitivity
+			cam_pitch = clamp(cam_pitch, -60.0, 20.0)
+
+	camera_rig.rotation_degrees = Vector3(0, cam_yaw, 0)
+	spring_arm_ref.rotation_degrees = Vector3(cam_pitch, 0, 0)
