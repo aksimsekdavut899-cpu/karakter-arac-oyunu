@@ -35,12 +35,21 @@ func _ready() -> void:
 	add_child(mod_ui)
 	mod_ui.set_player(player)
 
+	var spring_arm = SpringArm3D.new()
+	spring_arm.name = "KameraKolu"
+	spring_arm.position = Vector3(0, 2.2, 0)
+	spring_arm.rotation_degrees = Vector3(-12, 0, 0)
+	spring_arm.spring_length = 6.0
+	player.add_child(spring_arm)
+
 	var camera = Camera3D.new()
-	camera.name = "TestKamera"
-	camera.position = Vector3(0, 120, 120)
-	camera.rotation_degrees = Vector3(-45, 0, 0)
-	camera.far = 2000.0
+	camera.name = "TakipKamerasi"
 	camera.current = true
-	add_child(camera)
+	spring_arm.add_child(camera)
+
+	var ControlsScript = load("res://ControlsUI.gd")
+	var controls_ui = ControlsScript.new()
+	add_child(controls_ui)
+	player.set_controls(controls_ui)
 
 	print("Kurulum tamamlandi.")
