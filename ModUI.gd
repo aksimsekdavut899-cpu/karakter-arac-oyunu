@@ -290,8 +290,6 @@ func _apply_hologram(node: Node, base_color: Color) -> void:
 		holo_mat.rim_tint = 0.85
 		holo_mat.metallic = 0.0
 		holo_mat.roughness = 1.0
-		holo_mat.grow_amount = 0.01
-		holo_mat.grow = true
 		node.material_override = holo_mat
 	for child in node.get_children():
 		_apply_hologram(child, base_color)
