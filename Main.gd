@@ -78,22 +78,22 @@ func _process(delta: float) -> void:
 		return
 	camera_rig.global_position = player_ref.global_position
 
-if player_ref.is_vehicle:
-target_rad = player_ref.rotation.y
-current_rad = deg_to_rad(cam_yaw)
-new_rad = lerp_angle(current_rad, target_rad, clamp(6.0 * delta, 0.0, 1.0))
-aw = rad_to_deg(new_rad)
-= lerp(cam_pitch, -10.0, 4.0 * delta)
-controls_ref and controls_ref.is_accel():
-g_length = lerp(target_spring_length, 7.0, 8.0 * delta)
-controls_ref:
-zd = controls_ref.get_zoom_delta()
-g_length = clamp(target_spring_length + zd, 5.0, 20.0)
-g_arm_ref.spring_length = lerp(spring_arm_ref.spring_length, target_spring_length, 5.0 * delta)
-else:
-g_arm_ref.spring_length = lerp(spring_arm_ref.spring_length, 6.0, 3.0 * delta)
+	if player_ref.is_vehicle:
+		var target_rad = player_ref.rotation.y
+		var current_rad = deg_to_rad(cam_yaw)
+		var new_rad = lerp_angle(current_rad, target_rad, clamp(6.0 * delta, 0.0, 1.0))
+		cam_yaw = rad_to_deg(new_rad)
+		cam_pitch = lerp(cam_pitch, -10.0, 4.0 * delta)
+		if controls_ref and controls_ref.is_accel():
+			target_spring_length = lerp(target_spring_length, 7.0, 8.0 * delta)
+		elif controls_ref:
+			var zd = controls_ref.get_zoom_delta()
+			target_spring_length = clamp(target_spring_length + zd, 5.0, 20.0)
+		spring_arm_ref.spring_length = lerp(spring_arm_ref.spring_length, target_spring_length, 5.0 * delta)
+	else:
+		spring_arm_ref.spring_length = lerp(spring_arm_ref.spring_length, 6.0, 3.0 * delta)
 
-if controls_ref and not player_ref.is_vehicle:
+	if controls_ref and not player_ref.is_vehicle:
 		var look = controls_ref.get_look_delta()
 		if look.length() > 0.0:
 			cam_yaw -= look.x * look_sensitivity
